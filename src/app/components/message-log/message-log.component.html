@@ -1,0 +1,15 @@
+<div class="bg-gray-900 text-white p-4 rounded-md h-96 overflow-y-scroll relative font-mono">
+
+    <button class="border-2 sticky bg-black top-0 ml-auto block" (click)="clear()">
+        Clear
+    </button>
+
+    <div class="mb-2 flex items-center text-sm" *ngFor="let msg of messages">
+        <span class="log-message-loader absolute" *ngIf="msg.pending"></span>
+        <span class="ml-6 whitespace-pre-line"
+            [ngClass]="msg.type==='INFO' ? 'text-cyan-300' : msg.type==='WARN' ? 'text-amber-300' : msg.type==='ERROR' ? 'text-red-300 font-bold' : msg.type==='SUCCESS' ? 'text-green-300 font-bold':'text-white'">
+            {{msg.text}}
+        </span>
+    </div>
+
+</div>

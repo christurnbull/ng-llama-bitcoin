@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    a {
+        @apply underline text-blue-600 hover:text-blue-800 visited:text-purple-600
+    }
+}
+
+
+@layer components {
+    button {
+        @apply relative rounded text-sm font-bold py-2 px-4 mr-2;
+    }
+
+    button.positive {
+        @apply bg-green-700 hover:bg-green-800 text-white;
+    }
+
+    button.neutral {
+        @apply bg-blue-700 hover:bg-blue-800 text-white;
+    }
+
+    button.negative {
+        @apply bg-red-700 hover:bg-red-800 text-white;
+    }
+
+    button:disabled {
+        @apply bg-gray-500 hover:bg-gray-500 cursor-not-allowed;
+    }
+}
+
+button[progress] .bar {
+    width: 100%;
+    height: 5px;
+    position: absolute;
+    background: rgba(255, 255, 255, 0.5);
+    overflow: hidden;
+    top: 0;
+    left: 0;
+}
+
+button[progress] .bar::after {
+    content: '';
+    width: 30%;
+    height: 5px;
+    background: rgb(253 224 71);
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+    animation: button_progress_bar_anim 1.25s linear infinite;
+}
+
+@keyframes button_progress_bar_anim {
+    0% {
+        left: 0;
+        transform: translateX(-100%);
+    }
+
+    100% {
+        left: 100%;
+        transform: translateX(0%);
+    }
+}

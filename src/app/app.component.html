@@ -1,0 +1,327 @@
+<div class="min-h-screen dark:bg-neutral-900">
+    <header class="fixed inset-x-0 bottom-0 bg-neutral-800 sm:relative z-10">
+        <div class="mx-auto justify-between p-3 sm:flex sm:max-w-4xl sm:p-4">
+
+            <a href="https://wow-l.uk/" class="flex no-underline items-center">
+                <img class="inline-block w-8 object-cover rounded-full mr-3 border-2 border-gray-400"
+                    src="https://avatars.githubusercontent.com/u/7288833?v=4" />
+                <span class="text-lg font-bold text-white">WOW Look...</span>
+            </a>
+
+        </div>
+    </header>
+
+    <main id="main-content">
+
+        <article class="mx-auto max-w-3xl p-4 selection:bg-black selection:text-white mb-24 space-y-16">
+
+            <h1 class="mb-8 text-4xl font-bold dark:text-white sm:mt-16">Using LLMs to Predict Bitcoin Private Keys
+            </h1>
+
+            <p class="mt-10 text-lg dark:text-neutral-200">
+                Causal Large Language Models predict the next token in a sequence of previous tokens.
+                We give an LLM a bitcoin public address and expect it to predict the secret
+                private key that generated that address.
+            </p>
+
+            <section>
+
+                <h2 class="mb-8 text-3xl font-bold dark:text-white sm:mt-16">Try it</h2>
+
+                <div class="space-y-4">
+
+                    <div class="flex items-end">
+
+                        <div class="flex flex-col items-start w-3/4">
+                            <label for="address" class="text-lg mb-2">
+                                Bitcoin Address
+                            </label>
+                            <input id="address" [ngModel]="bitcoinAddress.address"
+                                (ngModelChange)="setInputAddress($event)"
+                                class="bg-gray-200 appearance-none border-2 border-gray-200 rounded py-2 pl-2 pr-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500 w-full"
+                                type="text" placeholder="Bitcoin address to find the private key for">
+                        </div>
+
+
+                        <div class="flex flex-col items-end w-1/4">
+                            <label for="few-shot" class="text-lg mb-2">
+                                Few-Shot Samples
+                            </label>
+                            <input id="few-shot" [(ngModel)]="numSamples" min="0" max="50"
+                                class="bg-gray-200 appearance-none border-2 border-gray-200 rounded py-2 pl-2 pr-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500 w-16"
+                                type="number">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between">
+
+                        <button progress [busy]="busy.downloadLLM" (click)="downloadLLM()" title="Download LLM"
+                            class="positive" *ngIf="!haveLLM">
+                            Download LLM
+                        </button>
+
+                        <button progress [busy]="busy.predict" (click)="predict()" title="Predict Private Key"
+                            class="positive" *ngIf="haveLLM">
+                            Predict Private Key
+                        </button>
+
+                        <button progress [busy]="busy.genAddress" (click)="genAddress()" title="Generate Address"
+                            class="neutral">
+                            Generate Address
+                        </button>
+                    </div>
+
+                    <div>
+                        <message-log #messageLog></message-log>
+                    </div>
+
+                    <div class="flex justify-end min-h-[36px]">
+
+                        <button progress [busy]="busy.close" (click)="closeLlama()" title="Generate Address"
+                            class="neutral" *ngIf="llama.cpp">
+                            Close Llama.cpp
+                        </button>
+
+                        <button progress [busy]="busy.deleteLLM" (click)="deleteLLM()" title="Delete LLM"
+                            class="negative" *ngIf="haveLLM">
+                            Delete LLM
+                        </button>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <section>
+
+                <h2 class="mb-8 text-3xl font-bold dark:text-white sm:mt-16">How it works</h2>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    The LLM that is used is the <a href="https://huggingface.co/h2oai/h2o-danube3-500m-base">Danube3 500
+                        million parameter base model by H20</a>.
+                    It has been converted to GGUF format and quantized to 4 bits to reduce it's size to <a
+                        href="https://huggingface.co/lobkov/h2o-danube3-500m-base-Q4_K_M-GGUF">318mb</a>.
+                    <span class="font-bold">It runs entirely in the browser, on the device</span>.
+                </p>
+
+                <p class=" mt-10 text-lg dark:text-neutral-200">
+                    <a href="https://emscripten.org/">Emscripten</a> was used to build <a
+                        href="https://github.com/ggerganov/llama.cpp">llama.cpp</a> as a static WebAssembly
+                    library (with SIMD and multi-thread
+                    support).
+                    This handles all the math operations in the layers of the model and is configured to
+                    use flash attention.
+                </p>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    The inference code is written in c++ and compiled to WebAssembly and javascript
+                    with the llama.cpp library using Emscripten. <kbd class="rounded bg-neutral-200/50 p-1">Embind</kbd>
+                    is
+                    used to bind C++ classes to javascript classes, which reduces developer code. The
+                    <kbd class="rounded bg-neutral-200/50 p-1">proxy.h</kbd> API is used with
+                    <kbd class="rounded bg-neutral-200/50 p-1">ASYNCIFY</kbd> and <kbd
+                        class="rounded bg-neutral-200/50 p-1">PROXY_TO_PTHREAD</kbd> flags to
+                    run the code asynchonously in one or more web workers. This stops the main
+                    javascript event loop being blocked by the heavy compute occuring when inferencing
+                    the model, which allows the UI to remain responsive.
+                </p>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    The web app is constucted using <a href="https://angular.dev/">Angular</a> and <a
+                        href="https://tailwindcss.com/">Tailwind CSS</a>.
+                </p>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    A random Bitcoin address is generated (or provided by the user). The address can use
+                    any of these formats:
+                </p>
+
+                <ul class="list-disc text-lg ml-8 mt-4">
+                    <li>Public Key Hash (begins "1")</li>
+                    <li>Script Hash (begins "3")</li>
+                    <li>Witness Public Key Hash (begins "bc1q")</li>
+                    <li>Taproot (begins "bc1p")</li>
+                </ul>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    The GGUF model file is downloaded from Hugging Face and kept
+                    in the browser IndexedDB store (using <a href="https://dexie.org/">Dexie.js</a>).
+                </p>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    The model file is passed to the WebAssembly module which loads it into RAM
+                    using llama.cpp.
+                </p>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    A prompt for the LLM is generated with "few-shot" examples.
+                    Each example is on one line and contains the Bitcoin address and the
+                    corresponding base58 encoded private key. The final line contains only
+                    the target Bitcoin address. The expectation is that the LLM will predict
+                    the private key tokens that are absent for the target but present for the
+                    examples.
+                </p>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    This is similar in concept to <a
+                        href="https://en.wikipedia.org/wiki/Retrieval-augmented_generation">
+                        Retrieval Augmented Generation (RAG)</a>
+                    which expands the context of the prompt by providing external knowledge which was
+                    not present in the training data. The extra context in a RAG system is typically
+                    retrieved from a database (often using <a
+                        href="https://en.wikipedia.org/wiki/Nearest_neighbor_search#Approximation_methods">ANN</a> such
+                    as
+                    <a href="https://en.wikipedia.org/wiki/Hierarchical_Navigable_Small_World_graphs">HNSW</a>). For
+                    this
+                    system
+                    we generate random keys and addresses instead of finding similar ones (reasons why below).
+                </p>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    The prompt is given to the model, which predicts the most likely token that
+                    would appear next in the sequence. This is repeated until 44 characters have been
+                    generated, which is the length of a 256 bit private key that has been base58 encoded.
+                </p>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    The generated candidate private key is then used to derive a Bitcoin address,
+                    which is compared to the target address to see if the LLM predicted correctly.
+                </p>
+
+            </section>
+
+            <section>
+
+                <h2 class="mb-8 text-3xl font-bold dark:text-white sm:mt-16">Don't expect to find Private Keys</h2>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    LLMs are effective because they are trained on data that is inherently predictable.
+                    Even though there are a seemingly infinite ways to combine words into sentences,
+                    the languages we use have proven successful because we have restricted which words
+                    are used together and we've built grammatical patterns so that it is easier for
+                    us to remember how to use the words effectively. LLMs are effective at identifying these
+                    underlying patterns.
+                </p>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    Bitcoin addresses however, have been specifically designed to avoid predictable patterns.
+                    They are created using cryptographic algorithms that apply an <a
+                        href="https://en.wikipedia.org/wiki/Avalanche_effect" target="_blank"> avalanche effect</a>
+                    where
+                    one small change in the private key causes a dramatic change in the address.
+                    They are inherently unpredictable by design.
+                </p>
+
+                <p class="mt-10 text-lg dark:text-neutral-200 font-bold">
+                    An LLM will not predict private keys because there are no patterns in the tokens
+                    of the Bitcoin addresses or keys.
+                </p>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    Even if an LLM was trained with hundreds of trillions of tokens of
+                    Bitcoin addresses and private key data, the neural network would not converge
+                    because it would be unable to find temporal patterns between the tokens.
+                </p>
+
+            </section>
+
+            <section>
+
+                <h2 class="mb-8 text-3xl font-bold dark:text-white sm:mt-16">Why make it then?</h2>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    To demonstrate that LLMs can predict text that looks plausible,
+                    even with data that is not predictable,
+                    but it should not be mistaken as being correct or valuable.
+                </p>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    To demonstrate that (not so large) LLMs can run on device, in the browser.
+                </p>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    There are other domains where temporal patterns do exist within the data
+                    where this technique may be applied effectively. Possibly enhanced
+                    with RAG or fine-tuning.
+                </p>
+
+            </section>
+
+            <section>
+
+                <h2 class="mb-8 text-3xl font-bold dark:text-white sm:mt-16">Possible Improvements</h2>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    Increase the number of few-shot samples in the prompt.
+                </p>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    Trim the LLM vocabulary to only include tokens that are a single character.
+                    The token <kbd class="rounded bg-neutral-200/50 p-1">We</kbd>
+                    is treated differently to the tokens <kbd class="rounded bg-neutral-200/50 p-1">W</kbd>
+                    and <kbd class="rounded bg-neutral-200/50 p-1">e</kbd>.
+                </p>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    Using a wider and deeper LLM such as LLama 3 8B/70B or Falcon 180B may
+                    result in better predictions. Scaling up models has shown unexpected
+                    <a href="https://arxiv.org/abs/2206.07682">emergent abilities</a>.
+                </p>
+
+                <p class="mt-10 text-lg dark:text-neutral-200">
+                    Fine-tune the LLM using a dataset of bitcoin addresses and private keys
+                    (although the loss will probably not reduce and can be prone to <a
+                        href="https://en.wikipedia.org/wiki/Catastrophic_interference" target="_blank"> catastrophic
+                        forgetting</a>).
+                </p>
+
+            </section>
+
+        </article>
+
+    </main>
+
+    <div class="bg-gray-100 pb-24">
+
+        <article class="mx-auto max-w-3xl p-4 selection:bg-black selection:text-white">
+            <section class="mt-16">
+                <h2 class="mb-8 text-3xl font-bold dark:text-white sm:mt-16 hidden">Source</h2>
+
+                <div class="flex justify-evenly">
+                    <div class="flex">
+                        <img src="assets/github-icon.svg" />
+                    </div>
+                    <div class="flex flex-col">
+                        <ul class="space-y-4">
+                            <li>
+                                <p class="text-lg dark:text-neutral-200">Angular front-end code. </p>
+                                <p class="text-sm">
+                                    <a href="https://github.com/christurnbull/ng-llama-bitcoin">
+                                        https://github.com/christurnbull/ng-llama-bitcoin
+                                    </a>
+                                </p>
+                            </li>
+                            <li>
+                                <p class="text-lg dark:text-neutral-200">WebAssembly/C++ code.</p>
+                                <p class="text-sm">
+                                    <a href="https://github.com/christurnbull/wasm-llama-bitcoin">
+                                        https://github.com/christurnbull/wasm-llama-bitcoin
+                                    </a>
+                                </p>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+
+            </section>
+        </article>
+    </div>
+
+    <!-- Footer -->
+    <section class="bg-neutral-800 p-8 pb-20 sm:pb-8 text-white">
+        <div class="mx-auto flex sm:max-w-4xl sm:flex-row sm:justify-end">
+            <div class="font-bold">&#64;Chris Turnbull</div>
+        </div>
+    </section>
+</div>
